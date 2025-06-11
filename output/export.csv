@@ -1,0 +1,2 @@
+name,gender,birth-date,indentifers,contact-info
+Mr. Aaron697 Dickens475,male,1944-08-28,"[{'type': 'Medical Record Number', 'value': '8c95253e-8ee8-9ae8-6d40-021d702dc78e'}, {'type': 'Social Security Number', 'value': '999-86-2571'}, {'type': ""Driver's License"", 'value': 'S99949530'}, {'type': 'Passport Number', 'value': 'X67249552X'}]","[{'type': 'phone', 'number': '555-152-6034'}]"

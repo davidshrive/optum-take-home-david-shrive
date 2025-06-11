@@ -1,4 +1,5 @@
 import json
+import csv
 
 ## Functions
 def process_name(rawName):
@@ -57,3 +58,13 @@ for d in done:
 
 print(json.dumps(rawPatient, indent=2))
 print(json.dumps(patient, indent=2))
+
+
+## Export
+with open("output/export.csv", "w") as outputFile:
+	# Write headers
+	writer = csv.DictWriter(outputFile, patient.keys())
+	writer.writeheader()
+
+	# Write data
+	writer.writerow(patient)
