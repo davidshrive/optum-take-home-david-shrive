@@ -87,6 +87,8 @@ def process_subextension(topLevelKey, extension):
 inputPath = 'input/'
 inputFilenames = [filename for filename in os.listdir(inputPath) if filename.endswith('.json')]
 
+patients = []
+
 ## Process each file
 for inputFilename in inputFilenames:
 	## Open file
@@ -125,13 +127,16 @@ for inputFilename in inputFilenames:
 		for key, value in extension.items():
 			patient['extensions'][key] = value
 
-	## Export
-	outputPath = 'output/'
-	outputFilename = outputPath+inputFilename+'.csv'
-	with open(outputFilename, "w") as outputFile:
-		# Write headers
-		writer = csv.DictWriter(outputFile, patient.keys())
-		writer.writeheader()
+	patients.append(patient)
 
-		# Write data
+## Export
+outputPath = 'output/'
+outputFilename = outputPath+'patients.csv'
+with open(outputFilename, "w") as outputFile:
+	# Write headers
+	writer = csv.DictWriter(outputFile, patient.keys())
+	writer.writeheader()
+
+	# Write data
+	for patient in patients:
 		writer.writerow(patient)
