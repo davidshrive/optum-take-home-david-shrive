@@ -4,7 +4,7 @@ import os
 
 ## Functions
 def process_name(rawName):
-	nameParts = rawName['prefix'] + rawName['given'] + [rawName['family']]
+	nameParts = rawName.get('prefix',[]) + rawName['given'] + [rawName['family']]
 	return  " ".join(nameParts)	
 
 def process_identifiers(rawIdentifiers):
@@ -113,7 +113,7 @@ for inputFilename in inputFilenames:
 	patient['gender'] = rawPatient['gender']
 	patient['birth-date'] = rawPatient['birthDate']
 	patient['death-date-time'] = rawPatient.get('deceasedDateTime',None)
-	patient['multiple-birth'] = rawPatient['multipleBirthBoolean']
+	patient['multiple-birth'] = rawPatient.get('multipleBirthBoolean',None)
 	patient['indentifers'] = process_identifiers(rawPatient['identifier'])
 	patient['contact-info'] = process_telecom(rawPatient['telecom'])
 	patient['languages'] = process_communication(rawPatient['communication'])
