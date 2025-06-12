@@ -32,26 +32,55 @@ def process_communication(rawComs):
 		languages.append(extract_text(rawCom['language']))
 	return languages
 
+def process_address(rawAddress):
+	address = {}
+	address['street'] = " ".join(rawAddress['line'])
+	address['city'] = rawAddress['city']
+	address['state'] = rawAddress['state']
+	address['country'] = rawAddress['country']
+	if "extension" in rawAddress.keys():
+		address['extensions'] = {}
+		for rawExtension in rawAddress['extension']:
+			extension = process_extension(rawExtension)
+			for key, value in extension.items():
+				address['extensions'][key] = value 
+
+	return address
+
 def extract_text(input):
 	return input['text']
 
 def process_extension(extension):
-	print(extension)
+	extensions = {}
 	if extension['url'].startswith("http"):
 		key = extension['url'].split("/")[-1]
 	else:
 		key = extension['url']
-
-
-	value = False
+	
 	for possKey in ['valueString','valueCode','valueDecimal']:
 		if possKey in extension.keys():
 			value = extension[possKey]
 
-	if "extension" in extension.keys():
-		value = process_extension(extension['extension'][0])
+	if 'valueCoding' in extension.keys():
+		value = extension['valueCoding']['code']
 
-	return {key:value} if value else None
+	if 'valueAddress' in extension.keys():
+		for addressKey, addressValue in extension['valueAddress'].items():
+			extensions[key+'.'+addressKey] = addressValue
+		return extensions
+
+	if "extension" in extension.keys():
+		for rawSubExtension in extension['extension']:
+			subExtension = process_subextension(key,rawSubExtension)
+			extensions[subExtension['key']] = subExtension['value']
+	else:
+		extensions[key] = value
+	return extensions
+
+def process_subextension(topLevelKey, extension):
+	subExtension = process_extension(extension)
+	subKey = list(subExtension.keys())[0]
+	return {'key':topLevelKey+'.'+subKey, 'value':subExtension[subKey]}
 
 ## Load file
 with open('input/Aaron697_Dickens475_8c95253e-8ee8-9ae8-6d40-021d702dc78e.json', 'r') as inputFile:
@@ -80,17 +109,16 @@ patient['indentifers'] = process_identifiers(rawPatient['identifier'])
 patient['contact-info'] = process_telecom(rawPatient['telecom'])
 patient['languages'] = process_communication(rawPatient['communication'])
 patient['marital-status'] = extract_text(rawPatient['maritalStatus'])
-patient['extension'] = process_extension(rawPatient['extension'][0])
+patient['address'] = process_address(rawPatient['address'][0])
 
+# Process extensions generically 
+patient['extensions'] = {}
+for rawExtension in rawPatient['extension']:
+	extension = process_extension(rawExtension)
+	for key, value in extension.items():
+		patient['extensions'][key] = value 
 
-## Temp, to make it easier to see what left to process
-done = ['name', 'gender', 'birthDate', 'identifier','telecom','communication','maritalStatus','deceasedDateTime','multipleBirthBoolean']
-for d in done:
-	del rawPatient[d]
-
-print(json.dumps(rawPatient, indent=2))
 print(json.dumps(patient, indent=2))
-
 
 ## Export
 with open("output/export.csv", "w") as outputFile:
