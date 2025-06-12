@@ -1,5 +1,6 @@
 import json
 import csv
+import os
 
 ## Functions
 def process_name(rawName):
@@ -82,49 +83,55 @@ def process_subextension(topLevelKey, extension):
 	subKey = list(subExtension.keys())[0]
 	return {'key':topLevelKey+'.'+subKey, 'value':subExtension[subKey]}
 
-## Load file
-with open('input/Aaron697_Dickens475_8c95253e-8ee8-9ae8-6d40-021d702dc78e.json', 'r') as inputFile:
-	inputData = json.load(inputFile)
+## Load files
+inputPath = 'input/'
+inputFilenames = [filename for filename in os.listdir(inputPath) if filename.endswith('.json')]
 
-## Extract and sort resources
-resources = {}
-for resource in inputData['entry']:
-	type = resource['resource']['resourceType']
+## Process each file
+for inputFilename in inputFilenames:
+	## Open file
+	with open(inputPath+inputFilename, 'r') as inputFile:
+		inputData = json.load(inputFile)
 
-	if type in resources.keys():
-		resources[type].append(resource)
-	else:
-		resources[type] = [resource]
+	## Extract and sort resources
+	resources = {}
+	for resource in inputData['entry']:
+		type = resource['resource']['resourceType']
+
+		if type in resources.keys():
+			resources[type].append(resource)
+		else:
+			resources[type] = [resource]
 
 
-## Process patient resource type
-rawPatient = resources['Patient'][0]['resource']
-patient = {}
-patient['name'] = process_name(rawPatient['name'][0])
-patient['gender'] = rawPatient['gender']
-patient['birth-date'] = rawPatient['birthDate']
-patient['death-date-time'] = rawPatient['deceasedDateTime'] if rawPatient['deceasedDateTime'] else None
-patient['multiple-birth'] = rawPatient['multipleBirthBoolean']
-patient['indentifers'] = process_identifiers(rawPatient['identifier'])
-patient['contact-info'] = process_telecom(rawPatient['telecom'])
-patient['languages'] = process_communication(rawPatient['communication'])
-patient['marital-status'] = extract_text(rawPatient['maritalStatus'])
-patient['address'] = process_address(rawPatient['address'][0])
+	## Process patient resource type
+	rawPatient = resources['Patient'][0]['resource']
+	patient = {}
+	patient['name'] = process_name(rawPatient['name'][0])
+	patient['gender'] = rawPatient['gender']
+	patient['birth-date'] = rawPatient['birthDate']
+	patient['death-date-time'] = rawPatient.get('deceasedDateTime',None)
+	patient['multiple-birth'] = rawPatient['multipleBirthBoolean']
+	patient['indentifers'] = process_identifiers(rawPatient['identifier'])
+	patient['contact-info'] = process_telecom(rawPatient['telecom'])
+	patient['languages'] = process_communication(rawPatient['communication'])
+	patient['marital-status'] = extract_text(rawPatient['maritalStatus'])
+	patient['address'] = process_address(rawPatient['address'][0])
 
-# Process extensions generically 
-patient['extensions'] = {}
-for rawExtension in rawPatient['extension']:
-	extension = process_extension(rawExtension)
-	for key, value in extension.items():
-		patient['extensions'][key] = value 
+	# Process extensions generically
+	patient['extensions'] = {}
+	for rawExtension in rawPatient['extension']:
+		extension = process_extension(rawExtension)
+		for key, value in extension.items():
+			patient['extensions'][key] = value
 
-print(json.dumps(patient, indent=2))
+	## Export
+	outputPath = 'output/'
+	outputFilename = outputPath+inputFilename+'.csv'
+	with open(outputFilename, "w") as outputFile:
+		# Write headers
+		writer = csv.DictWriter(outputFile, patient.keys())
+		writer.writeheader()
 
-## Export
-with open("output/export.csv", "w") as outputFile:
-	# Write headers
-	writer = csv.DictWriter(outputFile, patient.keys())
-	writer.writeheader()
-
-	# Write data
-	writer.writerow(patient)
+		# Write data
+		writer.writerow(patient)
